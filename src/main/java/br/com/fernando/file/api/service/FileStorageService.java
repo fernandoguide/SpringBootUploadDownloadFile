@@ -20,51 +20,54 @@ import br.com.fernando.file.api.property.FileStorageProperties;
 @Service
 public class FileStorageService {
 
-    private final Path fileStorageLocation;
+	private final Path fileStorageLocation;
 
-    @Autowired
-    public FileStorageService(FileStorageProperties fileStorageProperties) {
-        this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir())
-            .toAbsolutePath().normalize();
+	@Autowired
+	public FileStorageService(FileStorageProperties fileStorageProperties) {
+		this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir()).toAbsolutePath().normalize();
 
-        try {
-            Files.createDirectories(this.fileStorageLocation);
-        } catch (Exception ex) {
-            throw new FileStorageException("Não foi possível criar o diretório em que os arquivos enviados serão armazenados.", ex);
-        }
-    }
+		try {
+			Files.createDirectories(this.fileStorageLocation);
+		} catch (Exception ex) {
+			throw new FileStorageException(
+					"Não foi possível criar o diretório em que os arquivos enviados serão armazenados.", ex);
+		}
+	}
 
-    public String storeFile(MultipartFile file) {
-        // padroniza o nome do arquivo
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+	public String storeFile(MultipartFile file) {
+		// padroniza o nome do arquivo
+		String fileName = StringUtils.cleanPath(file.getOriginalFilename());
 
-        try {
-            // Verifica se o nome do arquivo contém caracteres inválidos
-            if (fileName.contains("..")) {
-                throw new FileStorageException("Desculpe! Nome do arquivo contém sequência de caminho inválida" + fileName);
-            }
+		try {
+			// Verifica se o nome do arquivo contém caracteres inválidos
+			if (fileName.contains("..")) {
+				throw new FileStorageException(
+						"Desculpe! Nome do arquivo contém sequência de caminho inválida" + fileName);
+			}
 
-            //  Copiar arquivo para o local de destino (Substituindo arquivo existente pelo mesmo nome)
-            Path targetLocation = this.fileStorageLocation.resolve(fileName);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+			// Copia o arquivo para o local de destino (Substituindo arquivo existente pelo
+			// mesmo nome)
+			Path targetLocation = this.fileStorageLocation.resolve(fileName);
+			Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            return fileName;
-        } catch (IOException ex) {
-            throw new FileStorageException("Não foi possivel armazenar o arquivo " + fileName + ". Por favor tente novamente!", ex);
-        }
-    }
+			return fileName;
+		} catch (IOException ex) {
+			throw new FileStorageException(
+					"Não foi possivel armazenar o arquivo " + fileName + ". Por favor tente novamente!", ex);
+		}
+	}
 
-    public Resource loadFileAsResource(String fileName) {
-        try {
-            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            if (resource.exists()) {
-                return resource;
-            } else {
-                throw new FileStorageException("Arquivo não encontrado " + fileName);
-            }
-        } catch (MalformedURLException ex) {
-            throw new FileStorageException("Arquivo não encontrado " + fileName, ex);
-        }
-    }
+	public Resource loadFileAsResource(String fileName) {
+		try {
+			Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
+			Resource resource = new UrlResource(filePath.toUri());
+			if (resource.exists()) {
+				return resource;
+			} else {
+				throw new FileStorageException("Arquivo não encontrado " + fileName);
+			}
+		} catch (MalformedURLException ex) {
+			throw new FileStorageException("Arquivo não encontrado " + fileName, ex);
+		}
+	}
 }
